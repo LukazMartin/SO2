@@ -23,7 +23,7 @@ int num;
 int menu();
 
 struct afegirDades {
-	char *nomFitxer;
+	FILE *fitxer;
 	rb_tree *tree;
 };
 /*Funcions de l'opció 1 crear Arbre*/
@@ -80,20 +80,16 @@ rb_tree *crearArbre(char * aeroports){
 	return tree;
 }
 char *afegirDades(void *arg){
-	FILE *fp;
+
 	char *delay, *orig, *dest;
   	node_data *n_data;
 	list_data *l_data;
 	char str2[5000];
+	FILE *fp;
 
 	struct afegirDades *dades = (struct afegirDades *) arg;
-	fp = fopen(dades->nomFitxer,"r");
-	if(fp==NULL){
-		perror("Could not open file");
-		exit(-1);
-	}
+	fp = dades->fitxer;
 	
-	fgets(str2,5000,fp);
 	while(fgets(str2,5000,fp)!=NULL){
 	
 		
@@ -282,9 +278,17 @@ int main(int argc, char **argv)
 		pthread_t tid;
 		int a;
 		char * b;
+		fp = fopen(str2,"r");
+		if(fp==NULL){
+			perror("Could not open file");
+			exit(-1);
+		}
 		struct afegirDades aDades;
-		aDades.nomFitxer = str2;
+		aDades.fitxer = fp;
 		aDades.tree = tree;
+		
+		fgets(str2,5000,fp); //Llegim capçelera
+
 		a = pthread_create(&tid,NULL,(void*)afegirDades,(void*)&aDades);
 		if(a!=0){
 			printf("Error");
