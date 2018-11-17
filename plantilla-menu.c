@@ -3,8 +3,7 @@
  * Practica 3 
  *
  */
-
-#include <unistd.h>
+ #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,16 +12,15 @@
 #include "linked-list.h"
 #define MAXLINE      200
 #define MAGIC_NUMBER 0x0133C8F9
-
-/**
+ /**
  * 
  *  Menu
  * 
  */
 int num;
 int menu();
-
-struct afegirDades {
+pthread_mutex_t lock;
+ struct afegirDades {
 	FILE *fitxer;
 	rb_tree *tree;
 };
@@ -53,8 +51,7 @@ rb_tree *crearArbre(char * aeroports){
 	char str[100];
   	node_data *n_data;
 	rb_tree *tree;
-
-	fp = fopen(aeroports,"r");
+ 	fp = fopen(aeroports,"r");
 	if(fp == NULL){
 		perror("Could not open file");
 		exit(-1);
@@ -80,19 +77,20 @@ rb_tree *crearArbre(char * aeroports){
 	return tree;
 }
 char *afegirDades(void *arg){
-
 	char *delay, *orig, *dest;
   	node_data *n_data;
 	list_data *l_data;
 	char str2[5000];
-	FILE *fp;
-
-	struct afegirDades *dades = (struct afegirDades *) arg;
-	fp = dades->fitxer;
-	
-	while(fgets(str2,5000,fp)!=NULL){
-	
-		
+	pthread_mutex_lock(&lock);
+ 	struct afegirDades *dades = (struct afegirDades *) arg;
+	if(dades->fitxer==NULL){
+		perror("Could not open file");
+		exit(-1);
+	}
+	int linies = 0;
+	while(linies < 1000){
+		linies++;
+		fgets(str2,5000,dades->fitxer);
 		delay = getColumn(str2,15);
 		orig = getColumn(str2,17);
 		dest = getColumn(str2,18);
@@ -122,7 +120,7 @@ char *afegirDades(void *arg){
 		free(orig);
 		
 	}
-	fclose(fp);
+	pthread_mutex_unlock(&lock);
 	return ((void*) "Dades llegides\n");
 }
 /*Funció de l'opció 2 guardar Arbre a disc*/
@@ -130,11 +128,9 @@ void guardarArbre(node *child,FILE *fp)
 {
     if (child->right != NIL)
 	guardarArbre(child->right,fp);
-
-    if (child->left != NIL)
+     if (child->left != NIL)
 	guardarArbre(child->left,fp);
-
-    fwrite(child->data->key, strlen(child->data->key), 1, fp);
+     fwrite(child->data->key, strlen(child->data->key), 1, fp);
     int num_destins = child->data->list->num_items;
     fwrite(&num_destins,sizeof(int),1,fp);
     if(num_destins > 0){
@@ -149,8 +145,7 @@ void guardarArbre(node *child,FILE *fp)
 		fwrite(&f,sizeof(float),1,fp);
 		l_item = l_item->next;
 	}
-
-    }
+     }
 }
 /*Funció per l'opció 3 carregar arbre de disc*/
 rb_tree *carregarArbre(FILE *fp){
@@ -163,8 +158,7 @@ rb_tree *carregarArbre(FILE *fp){
 	list_data *l_data;
 	list *l;
 	rb_tree *tree;
-
-	tree = malloc(sizeof(rb_tree));
+ 	tree = malloc(sizeof(rb_tree));
 	init_tree(tree);
 	fread(&magic,sizeof(int),1,fp);
 	if(magic != MAGIC_NUMBER){
@@ -173,8 +167,7 @@ rb_tree *carregarArbre(FILE *fp){
 	}
 	fread(&num,sizeof(int),1,fp);
 	for(num_nodes=0;num_nodes<num;num_nodes++){
-
-		fread(buffer, 3, 1, fp);
+ 		fread(buffer, 3, 1, fp);
 		buffer[3] = '\0';       
 		aux = (char*)buffer;
 		fread(&num_destins, sizeof(int), 1, fp); 
@@ -202,16 +195,14 @@ rb_tree *carregarArbre(FILE *fp){
 	return tree;
 }
 /*Funcions per l'opció 4*/
-
-//Si s'ha introduït aeroport per teclat
+ //Si s'ha introduït aeroport per teclat
 void printRetard(char * IATA,rb_tree *tree){
 	node_data *n_data;
 	list_item *l_item;
 	n_data = find_node(tree,IATA);
 	if(n_data != NULL){
 		l_item = n_data->list->first;
-
-		printf("Media de retardos para %s\n",IATA);
+ 		printf("Media de retardos para %s\n",IATA);
 		printf("Retardos para el aeropuerto: %s\n",IATA);
 		while(l_item){
 			printf("   %s  --  %.3f minutos\n",(char*)l_item->data->key,l_item->data->delay/l_item->data->num_vols);
@@ -243,24 +234,24 @@ char *massDestinos(rb_tree *tree){
 	recursion(tree,n,r);
 	return r;
 }
-
-int main(int argc, char **argv)
+ int main(int argc, char **argv)
 {
-    char str1[MAXLINE], str2[MAXLINE];
+    char str1[MAXLINE], str2[MAXLINE],str3[5000];
     int opcio;
     FILE *fp;
+     rb_tree * tree = NULL;
 
-    rb_tree * tree = NULL;
-
-    if (argc != 1)
+     if (pthread_mutex_init(&lock, NULL) != 0)
+    {
+        printf("\n mutex init failed\n");
+        return 1;
+    }
+     if (argc != 1)
         printf("Opcions de la linia de comandes ignorades\n");
-
-    do {
+     do {
         opcio = menu();
         printf("\n\n");
-
-
-        switch (opcio) {
+         switch (opcio) {
             case 1:
 		if(tree != NULL){
 			printf("Alliberant arbre\n\n");
@@ -270,35 +261,44 @@ int main(int argc, char **argv)
                 printf("Introdueix fitxer que conte llistat d'aeroports: ");
                 fgets(str1, MAXLINE, stdin);
                 str1[strlen(str1)-1]=0;
-
-                printf("Introdueix fitxer de dades: ");
+                 printf("Introdueix fitxer de dades: ");
                 fgets(str2, MAXLINE, stdin);
                 str2[strlen(str2)-1]=0;
 		tree = crearArbre(str1);
-		pthread_t tid;
+		pthread_t tid[2];
 		int a;
 		char * b;
 		fp = fopen(str2,"r");
-		if(fp==NULL){
-			perror("Could not open file");
-			exit(-1);
-		}
+		
+		fgets(str3,5000,fp); //Llegim capçelera
 		struct afegirDades aDades;
 		aDades.fitxer = fp;
 		aDades.tree = tree;
-		
-		fgets(str2,5000,fp); //Llegim capçelera
-
-		a = pthread_create(&tid,NULL,(void*)afegirDades,(void*)&aDades);
-		if(a!=0){
-			printf("Error");
-			exit(-1);
+		int i = 0;
+		while (i < 10){
+			a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
+			if(a!=0){
+				printf("Error");
+				exit(-1);
+			}
+			i++;
 		}
-		pthread_join(tid,(void **)&b);
+		pthread_join(tid[0],(void **)&b);
+		pthread_join(tid[1],(void **)&b);
+		pthread_join(tid[2],(void **)&b);
+		pthread_join(tid[3],(void **)&b);
+		pthread_join(tid[4],(void **)&b);
+		pthread_join(tid[5],(void **)&b);
+		pthread_join(tid[6],(void **)&b);
+		pthread_join(tid[7],(void **)&b);
+		pthread_join(tid[8],(void **)&b);
+		pthread_join(tid[9],(void **)&b);
+		//i=0;
+		//while(i<10){pthread_join(tid[9],(void **)&b);}
+		pthread_mutex_destroy(&lock);
 		printf("%s",b);
                 break;
-
-            case 2:
+             case 2:
 				if(tree == NULL){
 					printf("Primer has de crear un arbre\n");
 				}
@@ -306,8 +306,7 @@ int main(int argc, char **argv)
 			        printf("Introdueix el nom de fitxer en el qual es desara l'arbre: ");
 			        fgets(str1, MAXLINE, stdin);
 			        str1[strlen(str1)-1]=0;
-
-			
+ 			
 		    		fp = fopen(str1,"w");
 		    		int magic = MAGIC_NUMBER;
 					fwrite(&magic,sizeof(int),1,fp);
@@ -317,8 +316,7 @@ int main(int argc, char **argv)
 		    		fclose(fp);
 				}
                 break;
-
-            case 3:
+             case 3:
                 printf("Introdueix nom de fitxer que conte l'arbre: ");
                 fgets(str1, MAXLINE, stdin);
                 str1[strlen(str1)-1]=0;
@@ -331,8 +329,7 @@ int main(int argc, char **argv)
 				tree = carregarArbre(fp);
 				fclose(fp);
                 break;
-
-            case 4:
+             case 4:
 				if(tree == NULL){
 					printf("No hi ha arbre creat.\n");
 				}
@@ -352,38 +349,31 @@ int main(int argc, char **argv)
 					}
 				}
                 break;
-
-            case 5:
+             case 5:
             	if(tree != NULL){
             		delete_tree(tree);
 			free(tree);
             	}
                 break;
-
-            default:
+             default:
                 printf("Opcio no valida\n");
-
-        } 
+         } 
     }
     while (opcio != 5);
-
-    return 0;
+     return 0;
 }
 int menu() 
 {
     char str[5];
     int opcio;
-
-    printf("\n\nMenu\n\n");
+     printf("\n\nMenu\n\n");
     printf(" 1 - Creacio de l'arbre\n");
     printf(" 2 - Emmagatzemar arbre a disc\n");
     printf(" 3 - Llegir arbre de disc\n");
     printf(" 4 - Consultar informacio de l'arbre\n");
     printf(" 5 - Sortir\n\n");
     printf("   Escull opcio: ");
-
-    fgets(str, 5, stdin);
+     fgets(str, 5, stdin);
     opcio = atoi(str); 
-
-    return opcio;
+     return opcio;
 } 
