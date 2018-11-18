@@ -265,7 +265,7 @@ char *massDestinos(rb_tree *tree){
 		        fgets(str2, MAXLINE, stdin);
 		        str2[strlen(str2)-1]=0;
 				tree = crearArbre(str1);
-				pthread_t tid[2];
+				pthread_t tid[10];
 				int a;
 				char * b;
 				fp = fopen(str2,"r");
