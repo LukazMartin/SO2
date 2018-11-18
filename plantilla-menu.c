@@ -3,7 +3,7 @@
  * Practica 3 
  *
  */
- #include <unistd.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -239,64 +239,66 @@ char *massDestinos(rb_tree *tree){
     char str1[MAXLINE], str2[MAXLINE],str3[5000];
     int opcio;
     FILE *fp;
-     rb_tree * tree = NULL;
+    rb_tree * tree = NULL;
 
-     if (pthread_mutex_init(&lock, NULL) != 0)
+    if (pthread_mutex_init(&lock, NULL) != 0)
     {
         printf("\n mutex init failed\n");
         return 1;
     }
-     if (argc != 1)
+    if (argc != 1)
         printf("Opcions de la linia de comandes ignorades\n");
-     do {
+    do {
         opcio = menu();
         printf("\n\n");
-         switch (opcio) {
+        switch (opcio) {
             case 1:
-		if(tree != NULL){
-			printf("Alliberant arbre\n\n");
-			delete_tree(tree);
-			free(tree);
-		}
-                printf("Introdueix fitxer que conte llistat d'aeroports: ");
-                fgets(str1, MAXLINE, stdin);
-                str1[strlen(str1)-1]=0;
-                 printf("Introdueix fitxer de dades: ");
-                fgets(str2, MAXLINE, stdin);
-                str2[strlen(str2)-1]=0;
-		tree = crearArbre(str1);
-		pthread_t tid[2];
-		int a;
-		char * b;
-		fp = fopen(str2,"r");
-		
-		fgets(str3,5000,fp); //Llegim capçelera
-		struct afegirDades aDades;
-		aDades.fitxer = fp;
-		aDades.tree = tree;
-		int i = 0;
-		while (i < 10){
-			a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
-			if(a!=0){
-				printf("Error");
-				exit(-1);
-			}
-			i++;
-		}
-		pthread_join(tid[0],(void **)&b);
-		pthread_join(tid[1],(void **)&b);
-		pthread_join(tid[2],(void **)&b);
-		pthread_join(tid[3],(void **)&b);
-		pthread_join(tid[4],(void **)&b);
-		pthread_join(tid[5],(void **)&b);
-		pthread_join(tid[6],(void **)&b);
-		pthread_join(tid[7],(void **)&b);
-		pthread_join(tid[8],(void **)&b);
-		pthread_join(tid[9],(void **)&b);
-		//i=0;
-		//while(i<10){pthread_join(tid[9],(void **)&b);}
-		pthread_mutex_destroy(&lock);
-		printf("%s",b);
+				if(tree != NULL){
+					printf("Alliberant arbre\n\n");
+					delete_tree(tree);
+					free(tree);
+				}
+		        printf("Introdueix fitxer que conte llistat d'aeroports: ");
+		        fgets(str1, MAXLINE, stdin);
+		        str1[strlen(str1)-1]=0;
+		         printf("Introdueix fitxer de dades: ");
+		        fgets(str2, MAXLINE, stdin);
+		        str2[strlen(str2)-1]=0;
+				tree = crearArbre(str1);
+				pthread_t tid[2];
+				int a;
+				char * b;
+				fp = fopen(str2,"r");
+				
+				fgets(str3,5000,fp); //Llegim capçelera
+				struct afegirDades aDades;
+				aDades.fitxer = fp;
+				aDades.tree = tree;
+				int i = 0;
+				while (i < 10){
+					a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
+					if(a!=0){
+						printf("Error");
+						exit(-1);
+					}
+					i++;
+				}
+				/*
+				pthread_join(tid[0],(void **)&b);
+				pthread_join(tid[1],(void **)&b);
+				pthread_join(tid[2],(void **)&b);
+				pthread_join(tid[3],(void **)&b);
+				pthread_join(tid[4],(void **)&b);
+				pthread_join(tid[5],(void **)&b);
+				pthread_join(tid[6],(void **)&b);
+				pthread_join(tid[7],(void **)&b);
+				pthread_join(tid[8],(void **)&b);
+				pthread_join(tid[9],(void **)&b);
+				*/
+				i=0;
+				while(i<10){pthread_join(tid[i],(void **)&b);i++;}
+				pthread_mutex_destroy(&lock);
+				printf("%s",b);
                 break;
              case 2:
 				if(tree == NULL){
@@ -352,7 +354,7 @@ char *massDestinos(rb_tree *tree){
              case 5:
             	if(tree != NULL){
             		delete_tree(tree);
-			free(tree);
+					free(tree);
             	}
                 break;
              default:
@@ -360,7 +362,7 @@ char *massDestinos(rb_tree *tree){
          } 
     }
     while (opcio != 5);
-     return 0;
+    return 0;
 }
 int menu() 
 {
