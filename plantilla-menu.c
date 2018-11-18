@@ -1,6 +1,6 @@
 /**
  *
- * Practica 3 
+ * Practica 4
  *
  */
 #include <unistd.h>
@@ -10,6 +10,7 @@
 #include <pthread.h>
 #include "red-black-tree.h"
 #include "linked-list.h"
+#include <sys/time.h>
 #define MAXLINE      200
 #define MAGIC_NUMBER 0x0133C8F9
  /**
@@ -240,6 +241,8 @@ char *massDestinos(rb_tree *tree){
     int opcio;
     FILE *fp;
     rb_tree * tree = NULL;
+    struct timeval tv1, tv2;
+    clock_t t1, t2;
 
     if (pthread_mutex_init(&lock, NULL) != 0)
     {
@@ -253,6 +256,7 @@ char *massDestinos(rb_tree *tree){
         printf("\n\n");
         switch (opcio) {
             case 1:
+
 				if(tree != NULL){
 					printf("Alliberant arbre\n\n");
 					delete_tree(tree);
@@ -270,6 +274,7 @@ char *massDestinos(rb_tree *tree){
 				char * b;
 				/* Ara anem a llegir quantes linies te el fitxer per saber quants
 				   fils haurem de crear per llegir-lo sencer */
+
 				fp = fopen(str2,"r");
 
 				int lanes = 0;
@@ -281,9 +286,14 @@ char *massDestinos(rb_tree *tree){
 				if(lanes%1000!=0){
 					lanes = lanes/1000 + 1;
 				}
+
 				/*********************************************/
 
 				fclose(fp);
+
+				gettimeofday(&tv1, NULL);
+				t1 = clock();
+
 				fp = fopen(str2,"r");
 				
 				fgets(str3,5000,fp); //Llegim capçelera
@@ -315,6 +325,13 @@ char *massDestinos(rb_tree *tree){
 				while(i<lanes){pthread_join(tid[i],(void **)&b);i++;}
 				pthread_mutex_destroy(&lock);
 				printf("%s",b);
+
+				gettimeofday(&tv2, NULL);
+				t2 = clock();
+
+				printf("Temps de CPU per llegir i assignar totes les dades: %fs\n",(double)(t2-t1)/(double)CLOCKS_PER_SEC);
+				printf("Temps cronologic: %fs\n",(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +(double) (tv2.tv_sec - tv1.tv_sec));
+
                 break;
              case 2:
 				if(tree == NULL){
