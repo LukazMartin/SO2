@@ -88,9 +88,9 @@ char *afegirDades(void *arg){
 		exit(-1);
 	}
 	int linies = 0;
-	while(linies < 1000){
+	while(linies < 1000 && fgets(str2,5000,dades->fitxer) != NULL){
 		linies++;
-		fgets(str2,5000,dades->fitxer);
+		//fgets(str2,5000,dades->fitxer);
 		delay = getColumn(str2,15);
 		orig = getColumn(str2,17);
 		dest = getColumn(str2,18);
@@ -236,7 +236,7 @@ char *massDestinos(rb_tree *tree){
 }
  int main(int argc, char **argv)
 {
-    char str1[MAXLINE], str2[MAXLINE],str3[5000];
+    char str1[MAXLINE], str2[MAXLINE],str3[5000],strl[MAXLINE];
     int opcio;
     FILE *fp;
     rb_tree * tree = NULL;
@@ -261,13 +261,29 @@ char *massDestinos(rb_tree *tree){
 		        printf("Introdueix fitxer que conte llistat d'aeroports: ");
 		        fgets(str1, MAXLINE, stdin);
 		        str1[strlen(str1)-1]=0;
-		         printf("Introdueix fitxer de dades: ");
+		        printf("Introdueix fitxer de dades: ");
 		        fgets(str2, MAXLINE, stdin);
 		        str2[strlen(str2)-1]=0;
 				tree = crearArbre(str1);
 				pthread_t tid[10];
 				int a;
 				char * b;
+				/* Ara anem a llegir quantes linies te el fitxer per saber quants
+				   fils haurem de crear per llegir-lo sencer */
+				fp = fopen(str2,"r");
+
+				int lanes = 0;
+
+				while(fgets(strl, MAXLINE, fp) != NULL){
+					lanes++;
+				}
+
+				if(lanes%1000!=0){
+					lanes = lanes/1000 + 1;
+				}
+				/*********************************************/
+
+				fclose(fp);
 				fp = fopen(str2,"r");
 				
 				fgets(str3,5000,fp); //Llegim capçelera
@@ -275,7 +291,7 @@ char *massDestinos(rb_tree *tree){
 				aDades.fitxer = fp;
 				aDades.tree = tree;
 				int i = 0;
-				while (i < 10){
+				while (i < lanes){
 					a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
 					if(a!=0){
 						printf("Error");
@@ -296,7 +312,7 @@ char *massDestinos(rb_tree *tree){
 				pthread_join(tid[9],(void **)&b);
 				*/
 				i=0;
-				while(i<10){pthread_join(tid[i],(void **)&b);i++;}
+				while(i<lanes){pthread_join(tid[i],(void **)&b);i++;}
 				pthread_mutex_destroy(&lock);
 				printf("%s",b);
                 break;
