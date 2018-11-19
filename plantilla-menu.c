@@ -82,16 +82,16 @@ char *afegirDades(void *arg){
   	node_data *n_data;
 	list_data *l_data;
 	char str2[5000];
-	pthread_mutex_lock(&lock);
  	struct afegirDades *dades = (struct afegirDades *) arg;
-	if(dades->fitxer==NULL){
-		perror("Could not open file");
-		exit(-1);
-	}
+	
 	int linies = 0;
-	while(linies < 1000 && fgets(str2,5000,dades->fitxer) != NULL){
+	while(linies < 1000){
 		linies++;
-		//fgets(str2,5000,dades->fitxer);
+		pthread_mutex_lock(&lock);
+		if (fgets(str2,5000,dades->fitxer) == NULL){
+			break;
+		}
+		pthread_mutex_unlock(&lock);
 		delay = getColumn(str2,15);
 		orig = getColumn(str2,17);
 		dest = getColumn(str2,18);
@@ -258,69 +258,72 @@ char *massDestinos(rb_tree *tree){
         switch (opcio) {
             case 1:
 
-				if(tree != NULL){
-					printf("Alliberant arbre\n\n");
-					delete_tree(tree);
-					free(tree);
-				}
+			if(tree != NULL){
+				printf("Alliberant arbre\n\n");
+				delete_tree(tree);
+				free(tree);
+			}
 		        printf("Introdueix fitxer que conte llistat d'aeroports: ");
 		        fgets(str1, MAXLINE, stdin);
 		        str1[strlen(str1)-1]=0;
 		        printf("Introdueix fitxer de dades: ");
 		        fgets(str2, MAXLINE, stdin);
 		        str2[strlen(str2)-1]=0;
-				tree = crearArbre(str1);
-				pthread_t tid[10];
-				int a;
-				char * b;
-				/* Ara anem a llegir quantes linies te el fitxer per saber quants
-				   fils haurem de crear per llegir-lo sencer */
+			tree = crearArbre(str1);
+			pthread_t tid[10];
+			int a;
+			char * b;
+			/* Ara anem a llegir quantes linies te el fitxer per saber quants
+			   fils haurem de crear per llegir-lo sencer */
 
-				fp = fopen(str2,"r");
+			fp = fopen(str2,"r");
+			if(fp==NULL){
+				perror("Could not open file");
+				exit(-1);
+			}
+			int lanes = 0;
 
-				int lanes = 0;
+			while(fgets(strl, MAXLINE, fp) != NULL){
+				lanes++;
+			}
 
-				while(fgets(strl, MAXLINE, fp) != NULL){
-					lanes++;
+			if(lanes%1000!=0){
+				lanes = lanes/1000 + 1;
+			}
+
+			/*********************************************/
+
+			fclose(fp);
+
+			gettimeofday(&tv1, NULL);
+			t1 = clock();
+
+			fp = fopen(str2,"r");
+			
+			fgets(str3,5000,fp); //Llegim capçelera
+			struct afegirDades aDades;
+			aDades.fitxer = fp;
+			aDades.tree = tree;
+			int i = 0;
+			while (i < lanes){
+				a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
+				if(a!=0){
+					printf("Error");
+					exit(-1);
 				}
+				i++;
+			}
 
-				if(lanes%1000!=0){
-					lanes = lanes/1000 + 1;
-				}
+			i=0;
+			while(i<lanes){pthread_join(tid[i],(void **)&b);i++;}
+			pthread_mutex_destroy(&lock);
+			printf("%s",b);
 
-				/*********************************************/
+			gettimeofday(&tv2, NULL);
+			t2 = clock();
 
-				fclose(fp);
-
-				gettimeofday(&tv1, NULL);
-				t1 = clock();
-
-				fp = fopen(str2,"r");
-				
-				fgets(str3,5000,fp); //Llegim capçelera
-				struct afegirDades aDades;
-				aDades.fitxer = fp;
-				aDades.tree = tree;
-				int i = 0;
-				while (i < lanes){
-					a = pthread_create(&(tid[i]),NULL,(void*)afegirDades,(void*)&aDades);
-					if(a!=0){
-						printf("Error");
-						exit(-1);
-					}
-					i++;
-				}
-
-				i=0;
-				while(i<lanes){pthread_join(tid[i],(void **)&b);i++;}
-				pthread_mutex_destroy(&lock);
-				printf("%s",b);
-
-				gettimeofday(&tv2, NULL);
-				t2 = clock();
-
-				printf("Temps de CPU per llegir i assignar totes les dades: %fs\n",(double)(t2-t1)/(double)CLOCKS_PER_SEC);
-				printf("Temps cronologic: %fs\n",(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +(double) (tv2.tv_sec - tv1.tv_sec));
+			printf("Temps de CPU per llegir i assignar totes les dades: %fs\n",(double)(t2-t1)/(double)CLOCKS_PER_SEC);
+			printf("Temps cronologic: %fs\n",(double) (tv2.tv_usec - tv1.tv_usec) / 1000000 +(double) (tv2.tv_sec - tv1.tv_sec));
 
                 break;
              case 2:
