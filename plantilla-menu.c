@@ -241,6 +241,7 @@ char *massDestinos(rb_tree *tree){
     int opcio;
     FILE *fp;
     rb_tree * tree = NULL;
+    
     struct timeval tv1, tv2;
     clock_t t1, t2;
 
@@ -309,18 +310,7 @@ char *massDestinos(rb_tree *tree){
 					}
 					i++;
 				}
-				/*
-				pthread_join(tid[0],(void **)&b);
-				pthread_join(tid[1],(void **)&b);
-				pthread_join(tid[2],(void **)&b);
-				pthread_join(tid[3],(void **)&b);
-				pthread_join(tid[4],(void **)&b);
-				pthread_join(tid[5],(void **)&b);
-				pthread_join(tid[6],(void **)&b);
-				pthread_join(tid[7],(void **)&b);
-				pthread_join(tid[8],(void **)&b);
-				pthread_join(tid[9],(void **)&b);
-				*/
+
 				i=0;
 				while(i<lanes){pthread_join(tid[i],(void **)&b);i++;}
 				pthread_mutex_destroy(&lock);
