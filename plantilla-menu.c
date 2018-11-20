@@ -13,6 +13,7 @@
 #include <sys/time.h>
 #define MAXLINE      200
 #define MAGIC_NUMBER 0x0133C8F9
+#define bloc 1000
  /**
  * 
  *  Menu
@@ -77,7 +78,7 @@ rb_tree *crearArbre(char * aeroports){
 	
 	return tree;
 }
-char *afegirDades(void *arg){
+int *afegirDades(void *arg){
 	char *delay, *orig, *dest;
   	node_data *n_data;
 	list_data *l_data;
@@ -85,7 +86,7 @@ char *afegirDades(void *arg){
  	struct afegirDades *dades = (struct afegirDades *) arg;
 	
 	int linies = 0;
-	while(linies < 1000){
+	while(linies < bloc){
 		linies++;
 		pthread_mutex_lock(&lock);
 		if (fgets(str2,5000,dades->fitxer) == NULL){
@@ -96,6 +97,7 @@ char *afegirDades(void *arg){
 		orig = getColumn(str2,17);
 		dest = getColumn(str2,18);
 		n_data = find_node(dades->tree,orig);
+		pthread_mutex_lock(&n_data->lock);
 		l_data = find_list(n_data->list, dest);
 		if(l_data == NULL){
 			l_data = malloc(sizeof(list_data));
@@ -116,7 +118,7 @@ char *afegirDades(void *arg){
 			l_data->num_vols += 1;	
 			free(dest);	
 		}
-		
+		pthread_mutex_unlock(&n_data->lock);
 		free(delay);
 		free(orig);
 		

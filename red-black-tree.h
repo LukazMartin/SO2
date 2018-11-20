@@ -32,6 +32,7 @@ typedef struct node_data_
     // within the structure. You may adapt it to your needs:
     // add or remove fields as you need.
     list *list;
+    pthread_mutex_t lock;
 } node_data; 
 
 /**
