@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-
+#include <pthread.h>
 #include "red-black-tree.h"
 
 /**
@@ -38,6 +38,7 @@
 static void free_node_data(node_data *data)
 {
     free(data->key);
+    pthread_mutex_destroy(&data->lock);
     delete_list(data->list);
     free(data->list);
     free(data);

@@ -71,6 +71,7 @@ rb_tree *crearArbre(char * aeroports){
 			insert_node(tree,n_data);
 			l = (list *)malloc(sizeof(list));
 			n_data->list = l;
+            pthread_mutex_init(&n_data->lock,NULL);
 			init_list(n_data->list);
 		}
 	}
